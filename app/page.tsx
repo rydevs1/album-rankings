@@ -69,8 +69,24 @@ export default async function Home() {
     );
   }
 
-  const typedRankingEntries =
-    (rankingEntries as RankingEntry[] | null) ?? [];
+  const typedRankingEntries: RankingEntry[] = (rankingEntries ?? []).map(
+    (entry) => {
+      const album = entry.albums[0];
+
+      return {
+        position: entry.position,
+        albums: {
+          ...album,
+          album_artists: album.album_artists.map((credit) => ({
+            ...credit,
+            artists: credit.artists[0],
+            artist_aliases: credit.artist_aliases[0] ?? null,
+          })),
+          tracks: album.tracks,
+        },
+      };
+    }
+  );
 
   let availableAlbums: Array<{
     id: number;
@@ -120,8 +136,8 @@ export default async function Home() {
         const artistName = credits
           .map(
             (credit) =>
-              credit.artist_aliases?.alias_name ??
-              credit.artists.name
+              credit.artist_aliases?.[0]?.alias_name ??
+              credit.artists[0]?.name
           )
           .join(" & ");
 

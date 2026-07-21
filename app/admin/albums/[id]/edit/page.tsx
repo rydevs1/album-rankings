@@ -24,10 +24,7 @@ export default async function EditAlbumPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user ||
-    user.email !== "rydevs1@gmail.com"
-  ) {
+  if (!user || user.email !== "rydevs1@gmail.com") {
     redirect("/login");
   }
 
@@ -81,11 +78,20 @@ export default async function EditAlbumPage({
     (a, b) => a.track_number - b.track_number
   );
 
+  const normalizedAlbum = {
+    ...album,
+    album_artists: album.album_artists.map((credit) => ({
+      ...credit,
+      artists: credit.artists[0],
+      artist_aliases: credit.artist_aliases[0] ?? null,
+    })),
+  };
+
   return (
     <main>
       <h1>Edit album</h1>
 
-      <EditAlbumForm album={album} />
+      <EditAlbumForm album={normalizedAlbum} />
     </main>
   );
 }
