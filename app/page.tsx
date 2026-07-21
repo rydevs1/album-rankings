@@ -69,24 +69,47 @@ export default async function Home() {
     );
   }
 
-  const typedRankingEntries: RankingEntry[] = (rankingEntries ?? []).map(
-    (entry) => {
-      const album = entry.albums[0];
+  const typedRankingEntries = (rankingEntries ?? []).flatMap((entry) => {
+  const album = Array.isArray(entry.albums)
+    ? entry.albums[0]
+    : entry.albums;
 
-      return {
-        position: entry.position,
-        albums: {
-          ...album,
-          album_artists: album.album_artists.map((credit) => ({
-            ...credit,
-            artists: credit.artists[0],
-            artist_aliases: credit.artist_aliases[0] ?? null,
-          })),
-          tracks: album.tracks,
-        },
-      };
-    }
-  );
+  if (!album) {
+    return [];
+  }
+
+  const normalizedEntry: RankingEntry = {
+    position: entry.position,
+    albums: {
+      ...album,
+      album_artists: (album.album_artists ?? []).flatMap((credit) => {
+        const artist = Array.isArray(credit.artists)
+          ? credit.artists[0]
+          : credit.artists;
+
+        if (!artist) {
+          return [];
+        }
+
+        const alias = Array.isArray(credit.artist_aliases)
+          ? credit.artist_aliases[0] ?? null
+          : credit.artist_aliases ?? null;
+
+        return [
+          {
+            artist_order: credit.artist_order,
+            artist_rank: credit.artist_rank,
+            artists: artist,
+            artist_aliases: alias,
+          },
+        ];
+      }),
+      tracks: album.tracks ?? [],
+    },
+  };
+
+  return [normalizedEntry];
+});
 
   let availableAlbums: Array<{
     id: number;
