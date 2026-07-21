@@ -79,13 +79,30 @@ export default async function EditAlbumPage({
   );
 
   const normalizedAlbum = {
-    ...album,
-    album_artists: album.album_artists.map((credit) => ({
-      ...credit,
-      artists: credit.artists[0],
-      artist_aliases: credit.artist_aliases[0] ?? null,
-    })),
-  };
+  ...album,
+  album_artists: (album.album_artists ?? []).flatMap((credit) => {
+    const artist = Array.isArray(credit.artists)
+      ? credit.artists[0]
+      : credit.artists;
+
+    if (!artist) {
+      return [];
+    }
+
+    const alias = Array.isArray(credit.artist_aliases)
+      ? credit.artist_aliases[0] ?? null
+      : credit.artist_aliases ?? null;
+
+    return [
+      {
+        ...credit,
+        artists: artist,
+        artist_aliases: alias,
+      },
+    ];
+  }),
+  tracks: album.tracks ?? [],
+};
 
   return (
     <main>
