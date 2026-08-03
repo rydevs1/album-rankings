@@ -40,7 +40,7 @@ export default function AlbumRankingEntry({
         {entry.position}.
       </p>
 
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3">
         {coverUrl && (
           <img
             src={coverUrl}
@@ -52,7 +52,7 @@ export default function AlbumRankingEntry({
         )}
 
         {/* Album information */}
-        <div className="w-96 shrink-0">
+        <div className="w-76 shrink-0">
           <h2
             title={album.note ?? undefined}
             className="max-w-96 text-balance text-2xl font-bold leading-tight"
@@ -70,7 +70,7 @@ export default function AlbumRankingEntry({
             )}
           </h2>
 
-          <p className="text-lg">
+          <p className="text-lg text-balance leading-tight">
             {sortedArtists.map((credit, index) => {
               const displayName =
                 credit.artist_aliases?.alias_name ??
@@ -119,9 +119,9 @@ export default function AlbumRankingEntry({
         {/* Track list */}
         <div className="ml-1 overflow-x-auto">
           <div
-            className="grid min-w-max gap-x-4 gap-y-1"
+            className="grid min-w-max gap-x-1 gap-y-1"
             style={{
-              gridTemplateColumns: `repeat(${sortedTracks.length}, 80px)`,
+              gridTemplateColumns: `repeat(${sortedTracks.length}, 101px)`,
             }}
           >
             {/* Row 1: track numbers */}
