@@ -23,17 +23,8 @@ async function moveArtistAlbum(formData: FormData) {
 
   const artistId = Number(formData.get("artistId"));
   const albumId = Number(formData.get("albumId"));
-  const slug = String(formData.get("slug") ?? "");
-  const direction = String(formData.get("direction") ?? "");
-
-  if (
-    !artistId ||
-    !albumId ||
-    !slug ||
-    (direction !== "up" && direction !== "down")
-  ) {
-    return;
-  }
+  const direction = String(formData.get("direction"));
+  const slug = String(formData.get("slug"));
 
   const supabase = await createClient();
 
@@ -47,32 +38,31 @@ async function moveArtistAlbum(formData: FormData) {
     return;
   }
 
-  /*
-   * Get the complete custom ranking for this artist.
-   *
-   * We use the full ordered list rather than simply looking for
-   * currentRank + 1 or currentRank - 1. That means this still works
-   * if your ranks ever contain a gap.
-   */
-  const { data: artistRanking, error: rankingError } = await supabase
+  // Get all albums for this artist in current best-to-worst order
+  const { data: rankings, error: rankingError } = await supabase
     .from("album_artists")
     .select(`
       album_id,
       artist_rank
     `)
     .eq("artist_id", artistId)
-    .not("artist_rank", "is", null)
     .order("artist_rank", { ascending: true });
 
-  if (rankingError || !artistRanking) {
+  if (rankingError) {
+    console.error("Ranking fetch error:", rankingError);
     return;
   }
 
-  const currentIndex = artistRanking.findIndex(
+  if (!rankings) {
+    return;
+  }
+
+  const currentIndex = rankings.findIndex(
     (entry) => entry.album_id === albumId
   );
 
   if (currentIndex === -1) {
+    console.error("Album not found in artist rankings.");
     return;
   }
 
@@ -81,74 +71,71 @@ async function moveArtistAlbum(formData: FormData) {
       ? currentIndex - 1
       : currentIndex + 1;
 
+  // Don't move past the beginning or end
   if (
     targetIndex < 0 ||
-    targetIndex >= artistRanking.length
+    targetIndex >= rankings.length
   ) {
     return;
   }
 
-  const currentEntry = artistRanking[currentIndex];
-  const targetEntry = artistRanking[targetIndex];
+  const currentAlbum = rankings[currentIndex];
+  const targetAlbum = rankings[targetIndex];
 
-  if (
-    currentEntry.artist_rank === null ||
-    targetEntry.artist_rank === null
-  ) {
+  const currentRank = currentAlbum.artist_rank;
+  const targetRank = targetAlbum.artist_rank;
+
+  if (currentRank == null || targetRank == null) {
+    console.error("One or more artist_rank values are null.");
     return;
   }
 
   /*
-   * Temporarily give the current album a negative rank so that
-   * swapping does not conflict with a unique artist/rank rule,
-   * if you have one.
+   * Give the current album a temporary rank first.
+   * This avoids problems if you have a UNIQUE constraint on:
+   *
+   * artist_id + artist_rank
    */
-  const temporaryRank = -1000000 - currentEntry.artist_rank;
+  const temporaryRank = 999999;
 
-  const { error: temporaryMoveError } = await supabase
+  const { error: tempError } = await supabase
     .from("album_artists")
     .update({
       artist_rank: temporaryRank,
     })
     .eq("artist_id", artistId)
-    .eq("album_id", currentEntry.album_id);
+    .eq("album_id", currentAlbum.album_id);
 
-  if (temporaryMoveError) {
+  if (tempError) {
+    console.error("Temporary rank error:", tempError);
     return;
   }
 
-  const { error: targetMoveError } = await supabase
+  // Move the neighboring album into the current album's old position
+  const { error: targetError } = await supabase
     .from("album_artists")
     .update({
-      artist_rank: currentEntry.artist_rank,
+      artist_rank: currentRank,
     })
     .eq("artist_id", artistId)
-    .eq("album_id", targetEntry.album_id);
+    .eq("album_id", targetAlbum.album_id);
 
-  if (targetMoveError) {
-    /*
-     * Attempt to restore the original rank if the second update fails.
-     */
-    await supabase
-      .from("album_artists")
-      .update({
-        artist_rank: currentEntry.artist_rank,
-      })
-      .eq("artist_id", artistId)
-      .eq("album_id", currentEntry.album_id);
-
+  if (targetError) {
+    console.error("Target album move error:", targetError);
     return;
   }
 
-  const { error: currentMoveError } = await supabase
+  // Move the selected album into its new position
+  const { error: currentError } = await supabase
     .from("album_artists")
     .update({
-      artist_rank: targetEntry.artist_rank,
+      artist_rank: targetRank,
     })
     .eq("artist_id", artistId)
-    .eq("album_id", currentEntry.album_id);
+    .eq("album_id", currentAlbum.album_id);
 
-  if (currentMoveError) {
+  if (currentError) {
+    console.error("Current album move error:", currentError);
     return;
   }
 

@@ -38,41 +38,25 @@ export default function LoginForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-8 space-y-5 rounded-xl border border-neutral-800 bg-neutral-900 p-6"
-    >
-      <div>
-        <label
-          htmlFor="password"
-          className="mb-2 block font-medium"
-        >
-          Admin Password
-        </label>
+    <form onSubmit={handleSubmit}>
+      <label htmlFor="password">
+        Admin Password{" "}
+      </label>
 
-        <input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2"
-        />
-      </div>
+      <input
+        id="password"
+        type="password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        required
+        className = "border border-black"
+      />
 
-      {errorMessage && (
-        <p className="rounded-md bg-red-950 p-3 text-sm text-red-200">
-          {errorMessage}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full rounded-md bg-white px-4 py-2 font-semibold text-black disabled:opacity-50"
-      >
-        {isSubmitting ? "Signing in..." : "Sign In"}
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? " Signing in..." : ""}
       </button>
+
+      {errorMessage && <p>{errorMessage}</p>}
     </form>
   );
 }
