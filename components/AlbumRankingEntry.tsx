@@ -36,9 +36,11 @@ export default function AlbumRankingEntry({
 
   return (
     <article className="mb-2">
-      <p className="mb-2 text-2xl font-bold">
-        {entry.position}.
-      </p>
+      {entry.position !== 0 && (
+        <p className="mb-2 text-2xl font-bold">
+          {entry.position}.
+        </p>
+      )}
 
       <div className="flex items-start gap-3">
         {coverUrl && (
@@ -57,17 +59,9 @@ export default function AlbumRankingEntry({
             title={album.note ?? undefined}
             className="max-w-96 text-balance text-2xl font-bold leading-tight"
           >
-            {album.spotify_url ? (
-              <a
-                href={album.spotify_url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {album.title}
-              </a>
-            ) : (
-              album.title
-            )}
+            <Link href={`/albums/${album.slug}`}>
+              {album.title}
+            </Link>
           </h2>
 
           <p className="text-lg text-balance leading-tight">
@@ -105,15 +99,28 @@ export default function AlbumRankingEntry({
             {album.grade}
           </p>
 
-          <label className="mt-2 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={album.collected}
-              readOnly
-            />
+          <div className="mt-2 flex items-center gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={album.collected}
+                readOnly
+              />
 
-            Collected
-          </label>
+              Collected
+            </label>
+
+            {album.spotify_url && (
+              <a
+                href={album.spotify_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-green-600"
+              >
+                Spotify
+              </a>
+            )}
+          </div>
         </div>
 
         {/* Track list */}
